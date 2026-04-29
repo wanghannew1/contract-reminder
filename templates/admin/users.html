@@ -1,0 +1,231 @@
+{% raw %}{% extends "base.html" %}
+
+{% block title %}用户管理 - 合同提醒管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people"></i> 用户管理</h2>
+    <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> 添加用户
+    </a>
+</div>
+
+<!-- 搜索和筛选 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.users') }}" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">搜索</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="search" name="search"
+                           placeholder="搜索用户名、邮箱..." value="{{ search }}">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label for="role" class="form-label">角色</label>
+                <select class="form-select" id="role" name="role">
+                    <option value="">全部</option>
+                    <option value="admin" {% if role == 'admin' %}selected{% endif %}>管理员</option>
+                    <option value="user" {% if role == 'user' %}selected{% endif %}>普通用户</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">状态</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">全部</option>
+                    <option value="active" {% if status == 'active' %}selected{% endif %}>活跃</option>
+                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>停用</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">注册日期从</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">注册日期至</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 用户列表 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">用户列表</h5>
+        <span class="text-muted">共 {{ pagination.total }} 个用户</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>角色</th>
+                        <th>部门</th>
+                        <th>注册日期</th>
+                        <th>最后登录</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width: 32px; height: 32px; color: white; font-size: 14px;">
+                                    {{ user.username[0]|upper }}
+                                </div>
+                                <div>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.id == current_user.id %}
+                                        <span class="badge bg-light text-dark ms-1">本人</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                                <span class="badge bg-danger">管理员</span>
+                            {% else %}
+                                <span class="badge bg-secondary">普通用户</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.department or '-' }}</td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if user.last_login %}
+                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="text-muted">从未登录</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">活跃</span>
+                            {% else %}
+                                <span class="badge bg-secondary">停用</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-outline-primary btn-sm" title="编辑">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('admin.reset_password', id=user.id) }}" class="btn btn-outline-warning btn-sm" title="重置密码">
+                                    <i class="bi bi-key"></i>
+                                </a>
+                                {% if user.id != current_user.id %}
+                                    <button type="button" class="btn btn-outline-{% if user.is_active %}danger{% else %}success{% endif %} btn-sm"
+                                            onclick="toggleUserStatus({{ user.id }}, {{ user.is_active|tojson }})" title="{% if user.is_active %}停用{% else %}启用{% endif %}">
+                                        <i class="bi bi-{% if user.is_active %}slash-circle{% else %}check-circle{% endif %}"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" title="删除"
+                                            onclick="confirmDelete({{ user.id }}, '{{ user.username }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">暂无用户记录</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer">
+        <nav aria-label="用户分页">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num, **request.args) }}">上一页</a>
+                </li>
+                {% for page in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                    {% if page %}
+                        <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.users', page=page, **request.args) }}">{{ page }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num, **request.args) }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> 确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除用户 <strong id="deleteUsername"></strong> 吗？</p>
+                <p class="text-muted">此操作将同时删除该用户的所有关联数据，且不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> 确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function confirmDelete(id, username) {
+        document.getElementById('deleteUsername').textContent = username;
+        document.getElementById('deleteForm').action = '/admin/users/' + id + '/delete';
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    function toggleUserStatus(id, isActive) {
+        const action = isActive ? 'deactivate' : 'activate';
+        if (confirm('确定要' + (isActive ? '停用' : '启用') + '该用户吗？')) {
+            fetch('/admin/users/' + id + '/toggle-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('操作失败');
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
+{% endraw %}

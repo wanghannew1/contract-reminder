@@ -1,0 +1,212 @@
+{% raw %}{% extends "base.html" %}
+
+{% block title %}导入合同 - 合同提醒管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-upload"></i> 导入合同</h2>
+    <a href="{{ url_for('contracts.list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+<div class="row">
+    <!-- 导入说明 -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 导入说明</h5>
+            </div>
+            <div class="card-body">
+                <h6>支持的文件格式：</h6>
+                <p class="text-muted">CSV 文件（逗号分隔值）</p>
+
+                <h6 class="mt-3">必填字段：</h6>
+                <ul class="text-muted">
+                    <li>name - 合同名称</li>
+                    <li>party - 签约方</li>
+                    <li>contract_type - 合同类型</li>
+                    <li>start_date - 开始日期（YYYY-MM-DD）</li>
+                    <li>end_date - 到期日期（YYYY-MM-DD）</li>
+                </ul>
+
+                <h6 class="mt-3">可选字段：</h6>
+                <ul class="text-muted">
+                    <li>amount - 合同金额</li>
+                    <li>payment_method - 付款方式</li>
+                    <li>description - 合同描述</li>
+                    <li>remarks - 备注</li>
+                </ul>
+
+                <h6 class="mt-3">合同类型选项：</h6>
+                <ul class="text-muted">
+                    <li>采购合同</li>
+                    <li>销售合同</li>
+                    <li>租赁合同</li>
+                    <li>服务合同</li>
+                    <li>劳动合同</li>
+                    <li>其他</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-download"></i> 下载模板</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">下载标准CSV模板，确保数据格式正确。</p>
+                <a href="{{ url_for('contracts.download_template') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> 下载CSV模板
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入表单 -->
+    <div class="col-md-8 mb-4" x-data="importForm()">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-upload"></i> 上传文件</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" @submit.prevent="submitForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label for="csv_file" class="form-label">选择CSV文件</label>
+                        <input type="file" class="form-control" id="csv_file" name="csv_file"
+                               accept=".csv" @change="fileSelected" required>
+                        <div class="form-text">支持 .csv 格式文件，最大不超过 5MB</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mode" class="form-label">导入模式</label>
+                        <select class="form-select" id="mode" name="mode">
+                            <option value="skip">跳过已存在（默认）</option>
+                            <option value="update">更新已存在</option>
+                            <option value="replace">替换已存在</option>
+                        </select>
+                        <div class="form-text">选择如何处理与已有合同重名的情况</div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="has_header" name="has_header" checked>
+                        <label class="form-check-label" for="has_header">文件包含表头行</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary" onclick="previewCSV()">
+                            <i class="bi bi-eye"></i> 预览数据
+                        </button>
+                        <button type="submit" class="btn btn-primary" :disabled="uploading">
+                            <span x-show="!uploading"><i class="bi bi-upload"></i> 开始导入</span>
+                            <span x-show="uploading"><i class="bi bi-hourglass-split"></i> 导入中...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 预览区域 -->
+        <div class="card mt-3" x-show="previewData.length > 0" x-cloak>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> 数据预览</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>行号</th>
+                                <th>合同名称</th>
+                                <th>签约方</th>
+                                <th>类型</th>
+                                <th>开始日期</th>
+                                <th>到期日期</th>
+                                <th>金额</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(row, index) in previewData.slice(0, 10)" :key="index">
+                                <tr :class="{'table-danger': row.error}">
+                                    <td x-text="index + 1"></td>
+                                    <td x-text="row.name || '-'"></td>
+                                    <td x-text="row.party || '-'"></td>
+                                    <td x-text="row.contract_type || '-'"></td>
+                                    <td x-text="row.start_date || '-'"></td>
+                                    <td x-text="row.end_date || '-'"></td>
+                                    <td x-text="row.amount || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <span class="text-muted" x-text="`共 ${previewData.length} 行数据`"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导入结果 -->
+        <div class="card mt-3" x-show="importResult" x-cloak>
+            <div class="card-header" :class="importResult.success ? 'bg-success text-white' : 'bg-danger text-white'">
+                <h5 class="mb-0"><i :class="importResult.success ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
+                    导入{{ importResult.success ? '成功' : '失败' }}</h5>
+            </div>
+            <div class="card-body">
+                <p x-text="importResult.message"></p>
+                <div x-show="importResult.errors && importResult.errors.length > 0">
+                    <h6>错误列表：</h6>
+                    <ul class="text-danger">
+                        <template x-for="(error, index) in importResult.errors" :key="index">
+                            <li x-text="error"></li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function previewCSV() {
+        const fileInput = document.getElementById('csv_file');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('请先选择文件');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const lines = content.split('\n').filter(line => line.trim());
+            const data = [];
+
+            // 简单解析CSV（实际应用中应使用更完善的库如PapaParse）
+            lines.forEach(line => {
+                const cols = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+                if (cols.length >= 6) {
+                    data.push({
+                        name: cols[0],
+                        party: cols[1],
+                        contract_type: cols[2],
+                        start_date: cols[3],
+                        end_date: cols[4],
+                        amount: cols[5] || '-'
+                    });
+                }
+            });
+
+            // 更新Alpine数据
+            const alpineComponent = document.querySelector('[x-data]').__x.$data;
+            alpineComponent.previewData = data;
+        };
+        reader.readAsText(file);
+    }
+</script>
+{% endblock %}
+{% endraw %}

@@ -1,0 +1,265 @@
+{% raw %}{% extends "base.html" %}
+
+{% block title %}主面板 - 合同提醒管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-speedometer2"></i> 主面板</h2>
+        <p class="text-muted">欢迎回来，{{ current_user.username }}！以下是您的合同概况。</p>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4" x-data="dashboardStats()">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">合同总数</h6>
+                        <h3 class="mb-0">{{ stats.total }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-files" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-primary">
+                <a href="{{ url_for('contracts.list') }}" class="text-primary">查看全部</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">有效合同</h6>
+                        <h3 class="mb-0 text-success">{{ stats.active }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-check-circle" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-success">
+                <a href="{{ url_for('contracts.list') }}?status=active" class="text-success">查看全部</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">即将到期</h6>
+                        <h3 class="mb-0 text-warning">{{ stats.expiring_soon }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-exclamation-circle" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-warning">
+                <a href="{{ url_for('contracts.list') }}?filter=expiring_soon" class="text-warning">查看全部</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">已过期</h6>
+                        <h3 class="mb-0 text-danger">{{ stats.expired }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="bi bi-x-circle" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-danger">
+                <a href="{{ url_for('contracts.list') }}?status=expired" class="text-danger">查看全部</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 即将到期的合同 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> 即将到期的合同</h5>
+            </div>
+            <div class="card-body">
+                {% if expiring_contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>合同名称</th>
+                                <th>签约方</th>
+                                <th>到期日期</th>
+                                <th>剩余天数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in expiring_contracts %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('contracts.detail', id=contract.id) }}">{{ contract.name }}</a>
+                                </td>
+                                <td>{{ contract.party }}</td>
+                                <td>{{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">{{ contract.days_until_expiry }}天</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">暂无即将到期的合同</p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('contracts.list') }}?filter=expiring_soon" class="text-warning">查看全部即将到期合同</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 近期日程 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> 近期日程</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                <div class="list-group list-group-flush">
+                    {% for event in upcoming_events %}
+                    <a href="{{ url_for('calendar.detail', id=event.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <h6 class="mb-1">{{ event.title }}</h6>
+                            <small class="text-muted">{{ event.due_date.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <p class="mb-1 text-muted">{{ event.description[:50] }}{% if event.description|length > 50 %}...{% endif %}</p>
+                        <small class="text-info">{{ event.get_contract_name() if event.contract_id else '无关联合同' }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">暂无近期日程</p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('calendar.list') }}" class="text-info">查看全部日程</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 合同类型分布 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> 合同类型分布</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="contractTypeChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 月度趋势 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> 月度新增合同</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('alpine:init', function() {
+        Alpine.data('dashboardStats', function() {
+            return {
+                init() {
+                    // 图表初始化将在页面加载后执行
+                }
+            }
+        });
+    });
+
+    // 合同类型分布图
+    const typeCtx = document.getElementById('contractTypeChart').getContext('2d');
+    new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ type_distribution.labels|tojson }},
+            datasets: [{
+                data: {{ type_distribution.values|tojson }},
+                backgroundColor: [
+                    '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // 月度趋势图
+    const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_trend.labels|tojson }},
+            datasets: [{
+                label: '新增合同数',
+                data: {{ monthly_trend.values|tojson }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endraw %}

@@ -1,0 +1,408 @@
+/* ========================================
+   合同提醒管理系统 - 自定义样式
+   ======================================== */
+
+/* 基础样式 */
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --secondary-color: #6c757d;
+    --light-bg: #f8f9fa;
+    --dark-bg: #212529;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* 导航栏增强 */
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.navbar .nav-link {
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+    border-radius: 0.25rem;
+}
+
+.navbar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 卡片样式增强 */
+.card {
+    border: none;
+    box-shadow: 0 0 125px rgba(0, 0, 0, 0.1);
+    border-radius: 0.75rem;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    font-weight: 600;
+}
+
+.card-footer {
+    background-color: transparent;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* 表格样式增强 */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* 表单样式增强 */
+.form-label {
+    font-weight: 500;
+    color: var(--secondary-color);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* 按钮样式增强 */
+.btn {
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.btn-outline-primary:hover {
+    color: #fff;
+}
+
+/* 徽章样式 */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* 头像样式 */
+.avatar {
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 统计卡片样式 */
+.card.border-primary,
+.card.border-success,
+.card.border-warning,
+.card.border-danger {
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+.card.border-primary:hover,
+.card.border-success:hover,
+.card.border-warning:hover,
+.card.border-danger:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 模态框样式 */
+.modal-header {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+/* 分页样式增强 */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    border-radius: 0.25rem;
+    margin: 0 2px;
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 列表组样式 */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.list-group-item:last-child {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.list-group-item-action:hover {
+    background-color: var(--light-bg);
+}
+
+.list-group-item.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 登录页面样式 */
+.login-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 仪表盘统计卡片 */
+.stats-card {
+    transition: all 0.3s ease-in-out;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* 搜索和筛选卡片 */
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 工具提示样式 */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+/* 警告框样式 */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+}
+
+/* 进度条样式 */
+.progress {
+    border-radius: 0.5rem;
+    height: 0.5rem;
+}
+
+/* 加载状态 */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='20' fill='none' stroke='%230d6efd' stroke-width='4'%3E%3Canimate attributeName='stroke-dasharray' values='0,125;125,125' dur='1s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-125' dur='1s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 9999;
+}
+
+/* 空状态样式 */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--secondary-color);
+    opacity: 0.5;
+}
+
+/* 侧边栏样式（如果有） */
+.sidebar {
+    min-height: calc(100vh - 56px);
+    background-color: var(--light-bg);
+    border-right: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* 全屏日历视图 */
+.fc {
+    max-height: 600px;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.25rem;
+}
+
+.fc .fc-button {
+    border-radius: 0.25rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .d-flex.justify-content-between > div {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .navbar,
+    .card-footer,
+    .btn,
+    footer {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* Alpine.js 动画 */
+[x-cloak] {
+    display: none !important;
+}
+
+/* 平滑滚动 */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 焦点状态 */
+a:focus,
+button:focus,
+input:focus,
+select:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* FullCalendar 自定义样式 */
+.fc-event {
+    border-radius: 0.25rem;
+    padding: 2px 4px;
+    font-size: 0.85em;
+}
+
+.fc-daygrid-event {
+    margin-top: 2px;
+}
+
+.fc-toolbar-chunk {
+    margin-top: 0.5rem;
+}
+
+/* 数据透视表样式 */
+.pivot-table {
+    font-size: 0.9rem;
+}
+
+.pivot-table th {
+    background-color: var(--light-bg);
+}
+
+/* 标签页样式 */
+.nav-tabs {
+    border-bottom: 2px solid var(--light-bg);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--light-bg);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
