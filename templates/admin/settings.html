@@ -1,4 +1,4 @@
-{% raw %}{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}系统设置 - 合同提醒管理系统{% endblock %}
 
@@ -7,26 +7,20 @@
     <h2><i class="bi bi-gear"></i> 系统设置</h2>
 </div>
 
-<div class="row">
+<div class="row" x-data="settingsForm()">
     <!-- 左侧导航 -->
     <div class="col-md-3 mb-4">
         <div class="list-group" role="tablist">
-            <a class="list-group-item list-group-item-action active" data-bs-toggle="list" href="#general">
-                <i class="bi bi-sliders"></i> 基本设置
+            <a class="list-group-item list-group-item-action" :class="{ active: activeTab === 'dingtalk' }"
+               href="#" @click.prevent="activeTab = 'dingtalk'">
+                <i class="bi bi-chat-dots"></i> 钉钉配置
             </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#notification">
-                <i class="bi bi-bell"></i> 通知设置
+            <a class="list-group-item list-group-item-action" :class="{ active: activeTab === 'reminder' }"
+               href="#" @click.prevent="activeTab = 'reminder'">
+                <i class="bi bi-bell"></i> 提醒设置
             </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#email">
-                <i class="bi bi-envelope"></i> 邮件设置
-            </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#backup">
-                <i class="bi bi-database"></i> 备份设置
-            </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#security">
-                <i class="bi bi-shield-lock"></i> 安全设置
-            </a>
-            <a class="list-group-item list-group-item-action" data-bs-toggle="list" href="#about">
+            <a class="list-group-item list-group-item-action" :class="{ active: activeTab === 'about' }"
+               href="#" @click.prevent="activeTab = 'about'">
                 <i class="bi bi-info-circle"></i> 关于系统
             </a>
         </div>
@@ -34,357 +28,220 @@
 
     <!-- 右侧内容 -->
     <div class="col-md-9">
-        <div class="tab-content">
-            <!-- 基本设置 -->
-            <div class="tab-pane fade show active" id="general">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-sliders"></i> 基本设置</h5>
+        <!-- 钉钉配置 -->
+        <div class="card" x-show="activeTab === 'dingtalk'">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> 钉钉配置</h5>
+            </div>
+            <div class="card-body">
+                <form @submit.prevent="saveConfig">
+                    <div class="mb-3">
+                        <label for="dingtalk_appkey" class="form-label">AppKey</label>
+                        <input type="text" class="form-control" id="dingtalk_appkey" x-model="config.dingtalk_appkey"
+                               placeholder="钉钉应用的AppKey">
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('admin.save_settings') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="section" value="general">
 
-                            <div class="mb-3">
-                                <label for="system_name" class="form-label">系统名称</label>
-                                <input type="text" class="form-control" id="system_name" name="system_name"
-                                       value="{{ settings.system_name }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="company_name" class="form-label">公司名称</label>
-                                <input type="text" class="form-control" id="company_name" name="company_name"
-                                       value="{{ settings.company_name }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="items_per_page" class="form-label">每页显示条目数</label>
-                                <select class="form-select" id="items_per_page" name="items_per_page">
-                                    <option value="10" {% if settings.items_per_page == 10 %}selected{% endif %}>10</option>
-                                    <option value="20" {% if settings.items_per_page == 20 %}selected{% endif %}>20</option>
-                                    <option value="50" {% if settings.items_per_page == 50 %}selected{% endif %}>50</option>
-                                    <option value="100" {% if settings.items_per_page == 100 %}selected{% endif %}>100</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="date_format" class="form-label">日期格式</label>
-                                <select class="form-select" id="date_format" name="date_format">
-                                    <option value="YYYY-MM-DD" {% if settings.date_format == 'YYYY-MM-DD' %}selected{% endif %}>YYYY-MM-DD (2026-04-29)</option>
-                                    <option value="DD/MM/YYYY" {% if settings.date_format == 'DD/MM/YYYY' %}selected{% endif %}>DD/MM/YYYY (29/04/2026)</option>
-                                    <option value="MM/DD/YYYY" {% if settings.date_format == 'MM/DD/YYYY' %}selected{% endif %}>MM/DD/YYYY (04/29/2026)</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="timezone" class="form-label">时区</label>
-                                <select class="form-select" id="timezone" name="timezone">
-                                    <option value="Asia/Shanghai" {% if settings.timezone == 'Asia/Shanghai' %}selected{% endif %}>中国时区 (Asia/Shanghai)</option>
-                                    <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
-                                    <option value="America/New_York" {% if settings.timezone == 'America/New_York' %}selected{% endif %}>美国东部时区</option>
-                                    <option value="Europe/London" {% if settings.timezone == 'Europe/London' %}selected{% endif %}>英国时区</option>
-                                </select>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check"></i> 保存设置
-                            </button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="dingtalk_appsecret" class="form-label">AppSecret</label>
+                        <input type="password" class="form-control" id="dingtalk_appsecret" x-model="config.dingtalk_appsecret"
+                               placeholder="钉钉应用的AppSecret">
+                        <div class="form-text" x-show="config.dingtalk_appsecret_set">已设置密码，留空则不修改</div>
                     </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check"></i> 保存配置
+                        </button>
+                        <button type="button" class="btn btn-outline-info" @click="testConnection()">
+                            <i class="bi bi-lightning"></i> 测试连接
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-3" x-show="testResult">
+                    <div class="alert" :class="testResult?.success ? 'alert-success' : 'alert-danger'" x-text="testResult?.message"></div>
                 </div>
             </div>
+        </div>
 
-            <!-- 通知设置 -->
-            <div class="tab-pane fade" id="notification">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-bell"></i> 通知设置</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('admin.save_settings') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="section" value="notification">
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="enable_email_notification"
-                                       name="enable_email_notification" {% if settings.enable_email_notification %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_email_notification">启用邮件通知</label>
-                            </div>
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="enable_web_notification"
-                                       name="enable_web_notification" {% if settings.enable_web_notification %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_web_notification">启用站内通知</label>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="default_reminder_days" class="form-label">默认提前提醒天数</label>
-                                <input type="number" class="form-control" id="default_reminder_days"
-                                       name="default_reminder_days" value="{{ settings.default_reminder_days }}" min="1" max="30">
-                                <div class="form-text">合同到期前多少天发送提醒通知</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="reminder_times" class="form-label">每日提醒时间</label>
-                                <input type="time" class="form-control" id="reminder_times"
-                                       name="reminder_times" value="{{ settings.reminder_times or '09:00' }}">
-                                <div class="form-text">每天定时检查并发送提醒邮件的时间</div>
-                            </div>
-
-                            <h6 class="mt-4">提醒频率</h6>
-                            <div class="mb-3 form-check form-check-inline">
-                                <input type="radio" class="form-check-input" id="frequency_daily" name="reminder_frequency"
-                                       value="daily" {% if settings.reminder_frequency == 'daily' %}checked{% endif %}>
-                                <label class="form-check-label" for="frequency_daily">每日</label>
-                            </div>
-                            <div class="mb-3 form-check form-check-inline">
-                                <input type="radio" class="form-check-input" id="frequency_weekly" name="reminder_frequency"
-                                       value="weekly" {% if settings.reminder_frequency == 'weekly' %}checked{% endif %}>
-                                <label class="form-check-label" for="frequency_weekly">每周</label>
-                            </div>
-                            <div class="mb-3 form-check form-check-inline">
-                                <input type="radio" class="form-check-input" id="frequency_monthly" name="reminder_frequency"
-                                       value="monthly" {% if settings.reminder_frequency == 'monthly' %}checked{% endif %}>
-                                <label class="form-check-label" for="frequency_monthly">每月</label>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check"></i> 保存设置
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        <!-- 提醒设置 -->
+        <div class="card" x-show="activeTab === 'reminder'">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> 提醒设置</h5>
             </div>
-
-            <!-- 邮件设置 -->
-            <div class="tab-pane fade" id="email">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-envelope"></i> 邮件设置</h5>
+            <div class="card-body">
+                <form @submit.prevent="saveConfig">
+                    <div class="mb-3">
+                        <label for="reminder_days_before" class="form-label">提前提醒天数</label>
+                        <input type="number" class="form-control" id="reminder_days_before" x-model="config.reminder_days_before"
+                               min="1" max="365">
+                        <div class="form-text">合同到期前多少天开始创建提醒日程</div>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('admin.save_settings') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="section" value="email">
 
-                            <div class="mb-3">
-                                <label for="smtp_server" class="form-label">SMTP服务器</label>
-                                <input type="text" class="form-control" id="smtp_server" name="smtp_server"
-                                       value="{{ settings.smtp_server }}" placeholder="smtp.example.com">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="smtp_port" class="form-label">SMTP端口</label>
-                                <input type="number" class="form-control" id="smtp_port" name="smtp_port"
-                                       value="{{ settings.smtp_port or 587 }}" placeholder="587">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="smtp_username" class="form-label">用户名</label>
-                                <input type="text" class="form-control" id="smtp_username" name="smtp_username"
-                                       value="{{ settings.smtp_username }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="smtp_password" class="form-label">密码</label>
-                                <input type="password" class="form-control" id="smtp_password" name="smtp_password"
-                                       value="{{ settings.smtp_password }}" placeholder="留空则保持不变">
-                            </div>
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="smtp_use_tls"
-                                       name="smtp_use_tls" {% if settings.smtp_use_tls %}checked{% endif %}>
-                                <label class="form-check-label" for="smtp_use_tls">使用TLS加密</label>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="sender_email" class="form-label">发件人邮箱</label>
-                                <input type="email" class="form-control" id="sender_email" name="sender_email"
-                                       value="{{ settings.sender_email }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="sender_name" class="form-label">发件人名称</label>
-                                <input type="text" class="form-control" id="sender_name" name="sender_name"
-                                       value="{{ settings.sender_name }}">
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check"></i> 保存设置
-                            </button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="reminder_frequency" class="form-label">提醒频率</label>
+                        <select class="form-select" id="reminder_frequency" x-model="config.reminder_frequency">
+                            <option value="daily">每天</option>
+                            <option value="weekly">每周</option>
+                        </select>
                     </div>
-                </div>
-            </div>
 
-            <!-- 备份设置 -->
-            <div class="tab-pane fade" id="backup">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-database"></i> 备份设置</h5>
+                    <div class="mb-3" x-show="config.reminder_frequency === 'weekly'">
+                        <label for="reminder_weekday" class="form-label">提醒星期</label>
+                        <select class="form-select" id="reminder_weekday" x-model="config.reminder_weekday">
+                            <option value="MO">周一</option>
+                            <option value="TU">周二</option>
+                            <option value="WE">周三</option>
+                            <option value="TH">周四</option>
+                            <option value="FR">周五</option>
+                            <option value="SA">周六</option>
+                            <option value="SU">周日</option>
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('admin.save_settings') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="section" value="backup">
 
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="enable_auto_backup"
-                                       name="enable_auto_backup" {% if settings.enable_auto_backup %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_auto_backup">启用自动备份</label>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="backup_frequency" class="form-label">备份频率</label>
-                                <select class="form-select" id="backup_frequency" name="backup_frequency">
-                                    <option value="daily" {% if settings.backup_frequency == 'daily' %}selected{% endif %}>每日</option>
-                                    <option value="weekly" {% if settings.backup_frequency == 'weekly' %}selected{% endif %}>每周</option>
-                                    <option value="monthly" {% if settings.backup_frequency == 'monthly' %}selected{% endif %}>每月</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="backup retention_days" class="form-label">备份保留天数</label>
-                                <input type="number" class="form-control" id="backup_retention_days"
-                                       name="backup_retention_days" value="{{ settings.backup_retention_days or 30 }}" min="1">
-                                <div class="form-text">超过此天数的备份将被自动删除</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="backup_path" class="form-label">备份存储路径</label>
-                                <input type="text" class="form-control" id="backup_path" name="backup_path"
-                                       value="{{ settings.backup_path or '/backups' }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">手动备份</label>
-                                <div>
-                                    <a href="{{ url_for('admin.create_backup') }}" class="btn btn-outline-primary">
-                                        <i class="bi bi-download"></i> 创建备份
-                                    </a>
-                                    <a href="{{ url_for('admin.list_backups') }}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-list"></i> 查看备份列表
-                                    </a>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check"></i> 保存设置
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 安全设置 -->
-            <div class="tab-pane fade" id="security">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-shield-lock"></i> 安全设置</h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('admin.save_settings') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="section" value="security">
-
-                            <div class="mb-3">
-                                <label for="min_password_length" class="form-label">密码最小长度</label>
-                                <input type="number" class="form-control" id="min_password_length"
-                                       name="min_password_length" value="{{ settings.min_password_length or 8 }}" min="6" max="32">
-                            </div>
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="require_special_char"
-                                       name="require_special_char" {% if settings.require_special_char %}checked{% endif %}>
-                                <label class="form-check-label" for="require_special_char">密码必须包含特殊字符</label>
-                            </div>
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="require_uppercase"
-                                       name="require_uppercase" {% if settings.require_uppercase %}checked{% endif %}>
-                                <label class="form-check-label" for="require_uppercase">密码必须包含大写字母</label>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="password_expire_days" class="form-label">密码过期天数</label>
-                                <input type="number" class="form-control" id="password_expire_days"
-                                       name="password_expire_days" value="{{ settings.password_expire_days or 90 }}" min="0">
-                                <div class="form-text">设置为0则密码永不过期</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="max_login_attempts" class="form-label">最大登录尝试次数</label>
-                                <input type="number" class="form-control" id="max_login_attempts"
-                                       name="max_login_attempts" value="{{ settings.max_login_attempts or 5 }}" min="1">
-                                <div class="form-text">超过此次数将被锁定账户</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="lockout_duration" class="form-label">账户锁定时长（分钟）</label>
-                                <input type="number" class="form-control" id="lockout_duration"
-                                       name="lockout_duration" value="{{ settings.lockout_duration or 30 }}" min="1">
-                            </div>
-
-                            <div class="mb-3 form-check form-switch">
-                                <input type="checkbox" class="form-check-input" id="enable_2fa"
-                                       name="enable_2fa" {% if settings.enable_2fa %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_2fa">启用双因素认证</label>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check"></i> 保存设置
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 关于系统 -->
-            <div class="tab-pane fade" id="about">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> 关于系统</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="text-center mb-4">
-                            <i class="bi bi-file-earmark-text text-primary" style="font-size: 4rem;"></i>
-                            <h3 class="mt-2">{{ settings.system_name or '合同提醒管理系统' }}</h3>
-                            <p class="text-muted">版本 1.0.0</p>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="reminder_hour" class="form-label">提醒时间（小时）</label>
+                            <input type="number" class="form-control" id="reminder_hour" x-model="config.reminder_hour"
+                                   min="0" max="23">
                         </div>
-
-                        <table class="table table-bordered">
-                            <tr>
-                                <th width="30%">系统名称</th>
-                                <td>{{ settings.system_name or '合同提醒管理系统' }}</td>
-                            </tr>
-                            <tr>
-                                <th>公司名称</th>
-                                <td>{{ settings.company_name or '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>数据库类型</th>
-                                <td>SQLite</td>
-                            </tr>
-                            <tr>
-                                <th>Python版本</th>
-                                <td>3.x</td>
-                            </tr>
-                            <tr>
-                                <th>框架</th>
-                                <td>Flask + SQLAlchemy</td>
-                            </tr>
-                        </table>
-
-                        <div class="alert alert-info mt-4">
-                            <h6><i class="bi bi-heart"></i> 技术支持</h6>
-                            <p class="mb-0">如有问题，请联系系统管理员或发送邮件至 support@example.com</p>
+                        <div class="col-md-6">
+                            <label for="reminder_minute" class="form-label">提醒时间（分钟）</label>
+                            <input type="number" class="form-control" id="reminder_minute" x-model="config.reminder_minute"
+                                   min="0" max="59">
                         </div>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="reminder_stop_days" class="form-label">到期前停止天数</label>
+                        <input type="number" class="form-control" id="reminder_stop_days" x-model="config.reminder_stop_days"
+                               min="0" max="30">
+                        <div class="form-text">合同到期前多少天停止提醒</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> 保存设置
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 关于系统 -->
+        <div class="card" x-show="activeTab === 'about'">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 关于系统</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-file-earmark-text text-primary" style="font-size: 4rem;"></i>
+                    <h3 class="mt-2">合同到期提醒系统</h3>
+                    <p class="text-muted">版本 1.0.0</p>
+                </div>
+
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">系统名称</th>
+                        <td>合同到期提醒系统</td>
+                    </tr>
+                    <tr>
+                        <th>数据库类型</th>
+                        <td>SQLite</td>
+                    </tr>
+                    <tr>
+                        <th>Python版本</th>
+                        <td>3.x</td>
+                    </tr>
+                    <tr>
+                        <th>框架</th>
+                        <td>Flask + SQLAlchemy</td>
+                    </tr>
+                </table>
+
+                <div class="alert alert-info mt-4">
+                    <h6><i class="bi bi-lightbulb"></i> 使用说明</h6>
+                    <ol class="mb-0">
+                        <li>配置钉钉应用的 AppKey 和 AppSecret</li>
+                        <li>导入劳动合同 CSV 数据</li>
+                        <li>为合同创建钉钉日历提醒</li>
+                        <li>系统会自动按照设定的频率发送提醒</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-{% endraw %}
+
+{% block extra_scripts %}
+<script>
+function settingsForm() {
+    return {
+        activeTab: 'dingtalk',
+        config: {
+            dingtalk_appkey: '',
+            dingtalk_appsecret: '',
+            dingtalk_appsecret_set: false,
+            reminder_days_before: 60,
+            reminder_frequency: 'weekly',
+            reminder_weekday: 'TH',
+            reminder_hour: 9,
+            reminder_minute: 0,
+            reminder_stop_days: 5
+        },
+        testResult: null,
+
+        async init() {
+            await this.loadConfig();
+        },
+
+        async loadConfig() {
+            try {
+                const response = await fetch('/api/admin/config');
+                if (response.ok) {
+                    const data = await response.json();
+                    Object.assign(this.config, data);
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        },
+
+        async saveConfig() {
+            try {
+                const body = { ...this.config };
+                // 不发送空密码
+                if (!body.dingtalk_appsecret) delete body.dingtalk_appsecret;
+                delete body.dingtalk_appsecret_set;
+
+                const response = await fetch('/api/admin/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    alert('配置保存成功');
+                    await this.loadConfig();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || '保存失败');
+                }
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        },
+
+        async testConnection() {
+            this.testResult = null;
+            try {
+                const response = await fetch('/api/admin/config/test', { method: 'POST' });
+                const data = await response.json();
+                this.testResult = data;
+            } catch (error) {
+                this.testResult = { success: false, message: '测试失败: ' + error.message };
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

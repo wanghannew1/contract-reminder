@@ -5,12 +5,14 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 
 load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+csrf = CSRFProtect()
 
 
 def create_app():
@@ -28,8 +30,17 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    csrf.init_app(app)
 
+    # 豁免API路由的CSRF保护
     from app.routes import auth, contract, calendar, admin
+    csrf.exempt(auth.bp)
+    csrf.exempt(contract.bp)
+    csrf.exempt(calendar.bp)
+    csrf.exempt(admin.bp)
+
+    from app.routes.pages import bp as pages_bp
+    app.register_blueprint(pages_bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(contract.bp)
     app.register_blueprint(calendar.bp)

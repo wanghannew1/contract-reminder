@@ -1,199 +1,201 @@
-{% raw %}{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}用户管理 - 合同提醒管理系统{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> 用户管理</h2>
-    <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary">
+    <button class="btn btn-primary" @click="showCreateModal()">
         <i class="bi bi-person-plus"></i> 添加用户
-    </a>
+    </button>
 </div>
 
-<!-- 搜索和筛选 -->
-<div class="card mb-4">
+<!-- 搜索 -->
+<div class="card mb-4" x-data="userSearch()">
     <div class="card-body">
-        <form method="GET" action="{{ url_for('admin.users') }}" class="row g-3">
-            <div class="col-md-4">
+        <div class="row g-3">
+            <div class="col-md-6">
                 <label for="search" class="form-label">搜索</label>
                 <div class="input-group">
-                    <input type="text" class="form-control" id="search" name="search"
-                           placeholder="搜索用户名、邮箱..." value="{{ search }}">
-                    <button type="submit" class="btn btn-outline-primary">
+                    <input type="text" class="form-control" id="search" x-model="search"
+                           placeholder="搜索姓名、手机号..." @keyup.enter="loadUsers()">
+                    <button class="btn btn-outline-primary" @click="loadUsers()">
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
             </div>
-            <div class="col-md-2">
-                <label for="role" class="form-label">角色</label>
-                <select class="form-select" id="role" name="role">
-                    <option value="">全部</option>
-                    <option value="admin" {% if role == 'admin' %}selected{% endif %}>管理员</option>
-                    <option value="user" {% if role == 'user' %}selected{% endif %}>普通用户</option>
-                </select>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" @click="resetSearch()">
+                    <i class="bi bi-arrow-counterclockwise"></i> 重置
+                </button>
             </div>
-            <div class="col-md-2">
-                <label for="status" class="form-label">状态</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">全部</option>
-                    <option value="active" {% if status == 'active' %}selected{% endif %}>活跃</option>
-                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>停用</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="date_from" class="form-label">注册日期从</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
-            </div>
-            <div class="col-md-2">
-                <label for="date_to" class="form-label">注册日期至</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <!-- 用户列表 -->
-<div class="card">
+<div class="card" x-data="userList()">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">用户列表</h5>
-        <span class="text-muted">共 {{ pagination.total }} 个用户</span>
+        <span class="text-muted">共 <span x-text="total"></span> 个用户</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>用户名</th>
-                        <th>邮箱</th>
+                        <th>姓名</th>
+                        <th>手机号</th>
+                        <th>钉钉UnionId</th>
                         <th>角色</th>
-                        <th>部门</th>
-                        <th>注册日期</th>
-                        <th>最后登录</th>
                         <th>状态</th>
+                        <th>最后登录</th>
                         <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                     style="width: 32px; height: 32px; color: white; font-size: 14px;">
-                                    {{ user.username[0]|upper }}
+                    <template x-for="user in users" :key="user.id">
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                         style="width: 32px; height: 32px; color: white; font-size: 14px;"
+                                         x-text="user.name ? user.name[0] : '?'">
+                                    </div>
+                                    <strong x-text="user.name"></strong>
                                 </div>
-                                <div>
-                                    <strong>{{ user.username }}</strong>
-                                    {% if user.id == current_user.id %}
-                                        <span class="badge bg-light text-dark ms-1">本人</span>
-                                    {% endif %}
+                            </td>
+                            <td x-text="user.phone"></td>
+                            <td x-text="user.unionid || '-'"></td>
+                            <td>
+                                <span class="badge" :class="user.is_superadmin ? 'bg-danger' : 'bg-secondary'"
+                                      x-text="user.is_superadmin ? '超级管理员' : '普通用户'"></span>
+                            </td>
+                            <td>
+                                <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-secondary'"
+                                      x-text="user.is_active ? '启用' : '停用'"></span>
+                            </td>
+                            <td x-text="user.last_login_at || '从未登录'"></td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-primary btn-sm" title="编辑"
+                                            @click="editUser(user)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm" title="重置密码"
+                                            @click="resetPassword(user.id, user.name)">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                    <button class="btn btn-sm" title="启用/停用"
+                                            :class="user.is_active ? 'btn-outline-danger' : 'btn-outline-success'"
+                                            @click="toggleStatus(user.id, user.is_active)">
+                                        <i class="bi" :class="user.is_active ? 'bi-slash-circle' : 'bi-check-circle'"></i>
+                                    </button>
                                 </div>
-                            </div>
-                        </td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            {% if user.role == 'admin' %}
-                                <span class="badge bg-danger">管理员</span>
-                            {% else %}
-                                <span class="badge bg-secondary">普通用户</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ user.department or '-' }}</td>
-                        <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td>
-                            {% if user.last_login %}
-                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
-                            {% else %}
-                                <span class="text-muted">从未登录</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.is_active %}
-                                <span class="badge bg-success">活跃</span>
-                            {% else %}
-                                <span class="badge bg-secondary">停用</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-outline-primary btn-sm" title="编辑">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="{{ url_for('admin.reset_password', id=user.id) }}" class="btn btn-outline-warning btn-sm" title="重置密码">
-                                    <i class="bi bi-key"></i>
-                                </a>
-                                {% if user.id != current_user.id %}
-                                    <button type="button" class="btn btn-outline-{% if user.is_active %}danger{% else %}success{% endif %} btn-sm"
-                                            onclick="toggleUserStatus({{ user.id }}, {{ user.is_active|tojson }})" title="{% if user.is_active %}停用{% else %}启用{% endif %}">
-                                        <i class="bi bi-{% if user.is_active %}slash-circle{% else %}check-circle{% endif %}"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" title="删除"
-                                            onclick="confirmDelete({{ user.id }}, '{{ user.username }}')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
-                            <i class="bi bi-people" style="font-size: 2rem;"></i>
-                            <p class="mt-2 mb-0">暂无用户记录</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="users.length === 0">
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">暂无用户记录</p>
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
         </div>
     </div>
 
     <!-- 分页 -->
-    {% if pagination.pages > 1 %}
-    <div class="card-footer">
+    <div class="card-footer" x-show="totalPages > 1">
         <nav aria-label="用户分页">
             <ul class="pagination justify-content-center mb-0">
-                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num, **request.args) }}">上一页</a>
+                <li class="page-item" :class="{ disabled: page <= 1 }">
+                    <a class="page-link" href="#" @click.prevent="changePage(page - 1)">上一页</a>
                 </li>
-                {% for page in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
-                    {% if page %}
-                        <li class="page-item {% if page == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('admin.users', page=page, **request.args) }}">{{ page }}</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
-                {% endfor %}
-                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num, **request.args) }}">下一页</a>
+                <template x-for="p in displayPages" :key="p">
+                    <li class="page-item" :class="{ active: p === page }">
+                        <a class="page-link" href="#" @click.prevent="changePage(p)" x-text="p"></a>
+                    </li>
+                </template>
+                <li class="page-item" :class="{ disabled: page >= totalPages }">
+                    <a class="page-link" href="#" @click.prevent="changePage(page + 1)">下一页</a>
                 </li>
             </ul>
         </nav>
     </div>
-    {% endif %}
 </div>
 
-<!-- 删除确认模态框 -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+<!-- 创建/编辑用户模态框 -->
+<div class="modal fade" id="userModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> 确认删除</h5>
+            <div class="modal-header" :class="editingUser ? 'bg-primary text-white' : 'bg-success text-white'">
+                <h5 class="modal-title">
+                    <i class="bi" :class="editingUser ? 'bi-pencil' : 'bi-person-plus'"></i>
+                    <span x-text="editingUser ? '编辑用户' : '添加用户'"></span>
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>确定要删除用户 <strong id="deleteUsername"></strong> 吗？</p>
-                <p class="text-muted">此操作将同时删除该用户的所有关联数据，且不可恢复。</p>
+                <form id="userForm">
+                    <div class="mb-3">
+                        <label for="user_name" class="form-label">姓名 *</label>
+                        <input type="text" class="form-control" id="user_name" x-model="formData.name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_phone" class="form-label">手机号 *</label>
+                        <input type="text" class="form-control" id="user_phone" x-model="formData.phone"
+                               :disabled="editingUser" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_password" class="form-label" x-text="editingUser ? '新密码（留空不修改）' : '密码 *'"></label>
+                        <input type="password" class="form-control" id="user_password" x-model="formData.password"
+                               :required="!editingUser">
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_unionid" class="form-label">钉钉UnionId</label>
+                        <input type="text" class="form-control" id="user_unionid" x-model="formData.unionid"
+                               placeholder="用于创建钉钉日程提醒">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="user_is_superadmin" x-model="formData.is_superadmin">
+                        <label class="form-check-label" for="user_is_superadmin">超级管理员</label>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <form id="deleteForm" method="POST" style="display: inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i> 确认删除
-                    </button>
-                </form>
+                <button type="button" class="btn" :class="editingUser ? 'btn-primary' : 'btn-success'" @click="saveUser()">
+                    <i class="bi bi-check"></i> 保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 重置密码模态框 -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-key"></i> 重置密码</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要重置用户 <strong id="resetPasswordUserName"></strong> 的密码吗？</p>
+                <div class="mb-3">
+                    <label for="new_password" class="form-label">新密码</label>
+                    <input type="password" class="form-control" id="new_password" x-model="newPassword" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" @click="confirmResetPassword()">
+                    <i class="bi bi-check"></i> 确认重置
+                </button>
             </div>
         </div>
     </div>
@@ -202,30 +204,173 @@
 
 {% block extra_scripts %}
 <script>
-    function confirmDelete(id, username) {
-        document.getElementById('deleteUsername').textContent = username;
-        document.getElementById('deleteForm').action = '/admin/users/' + id + '/delete';
-        new bootstrap.Modal(document.getElementById('deleteModal')).show();
-    }
+// 搜索状态
+let userSearchState = {
+    search: '',
+    page: 1,
+    limit: 50
+};
 
-    function toggleUserStatus(id, isActive) {
-        const action = isActive ? 'deactivate' : 'activate';
-        if (confirm('确定要' + (isActive ? '停用' : '启用') + '该用户吗？')) {
-            fetch('/admin/users/' + id + '/toggle-status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token() }}'
-                }
-            }).then(response => {
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('操作失败');
-                }
-            });
+function userSearch() {
+    return {
+        search: userSearchState.search,
+
+        loadUsers() {
+            userSearchState.search = this.search;
+            userSearchState.page = 1;
+            window.dispatchEvent(new Event('load-users'));
+        },
+
+        resetSearch() {
+            this.search = '';
+            this.loadUsers();
         }
-    }
+    };
+}
+
+function userList() {
+    return {
+        users: [],
+        total: 0,
+        page: 1,
+        limit: 50,
+        totalPages: 0,
+        editingUser: null,
+        formData: { name: '', phone: '', password: '', unionid: '', is_superadmin: false },
+        newPassword: '',
+        resetPasswordUserId: null,
+
+        get displayPages() {
+            const pages = [];
+            const start = Math.max(1, this.page - 2);
+            const end = Math.min(this.totalPages, this.page + 2);
+            for (let i = start; i <= end; i++) pages.push(i);
+            return pages;
+        },
+
+        async init() {
+            await this.loadUsers();
+            window.addEventListener('load-users', () => {
+                this.page = userSearchState.page;
+                this.loadUsers();
+            });
+        },
+
+        async loadUsers() {
+            try {
+                let url = `/api/admin/users?page=${this.page}&limit=${this.limit}`;
+                if (userSearchState.search) url += `&search=${encodeURIComponent(userSearchState.search)}`;
+
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.users = data.items || [];
+                    this.total = data.total || 0;
+                    this.totalPages = Math.ceil(this.total / this.limit);
+                }
+            } catch (error) {
+                console.error('加载用户列表失败:', error);
+            }
+        },
+
+        changePage(p) {
+            if (p < 1 || p > this.totalPages) return;
+            this.page = p;
+            this.loadUsers();
+        },
+
+        showCreateModal() {
+            this.editingUser = null;
+            this.formData = { name: '', phone: '', password: '', unionid: '', is_superadmin: false };
+            new bootstrap.Modal(document.getElementById('userModal')).show();
+        },
+
+        editUser(user) {
+            this.editingUser = user;
+            this.formData = { name: user.name, phone: user.phone, password: '', unionid: user.unionid || '', is_superadmin: user.is_superadmin };
+            new bootstrap.Modal(document.getElementById('userModal')).show();
+        },
+
+        async saveUser() {
+            try {
+                let url = '/api/admin/users';
+                let method = 'POST';
+
+                if (this.editingUser) {
+                    url = `/api/admin/users/${this.editingUser.id}`;
+                    method = 'PUT';
+                }
+
+                const body = { ...this.formData };
+                if (this.editingUser && !body.password) delete body.password;
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                    this.loadUsers();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || '操作失败');
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        },
+
+        resetPassword(userId, userName) {
+            this.resetPasswordUserId = userId;
+            this.newPassword = '';
+            document.getElementById('resetPasswordUserName').textContent = userName;
+            new bootstrap.Modal(document.getElementById('resetPasswordModal')).show();
+        },
+
+        async confirmResetPassword() {
+            if (!this.newPassword) {
+                alert('请输入新密码');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${this.resetPasswordUserId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: this.newPassword })
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+                    alert('密码重置成功');
+                } else {
+                    const data = await response.json();
+                    alert(data.message || '重置失败');
+                }
+            } catch (error) {
+                alert('重置失败: ' + error.message);
+            }
+        },
+
+        async toggleStatus(userId, isActive) {
+            const action = isActive ? '停用' : '启用';
+            if (!confirm(`确定要${action}该用户吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/status`, { method: 'PATCH' });
+                if (response.ok) {
+                    this.loadUsers();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || '操作失败');
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+    };
+}
 </script>
 {% endblock %}
-{% endraw %}

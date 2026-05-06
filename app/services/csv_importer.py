@@ -3,6 +3,7 @@ CSV合同数据导入服务
 """
 import csv
 import io
+import json
 import chardet
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
@@ -248,5 +249,19 @@ class CSVImporter:
             "import_log_id": None  # 导入后填充
         }
 
+    def import_file(self, file) -> Dict[str, Any]:
+        """
+        从 Flask 文件对象导入
 
-import json  # json module needed for failed_detail serialization
+        Args:
+            file: Flask 文件对象 (werkzeug.datastructures.FileStorage)
+
+        Returns:
+            导入结果统计 dict
+        """
+        # 读取文件内容
+        file_content = file.read()
+        self.source_file = file.filename or "unknown.csv"
+
+        # 调用现有的导入方法
+        return self.import_contracts(file_content)

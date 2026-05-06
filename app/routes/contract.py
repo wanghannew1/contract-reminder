@@ -1,5 +1,6 @@
 """
 合同路由
+GET /api/contracts/stats - 合同统计
 POST /api/contracts/upload - 上传CSV文件
 GET /api/contracts/ - 合同列表
 DELETE /api/contracts/{id} - 删除合同
@@ -161,3 +162,37 @@ def delete_contract(contract_id):
     db.session.commit()
 
     return jsonify({'success': True}), 200
+
+
+@bp.route('/stats', methods=['GET'])
+@login_required
+def get_contract_stats():
+    """获取合同统计数据"""
+    today = date.today()
+    reminder_days = 60  # 默认60天内到期为即将到期
+
+    # 查询未删除的合同
+    query = Contract.query.filter_by(user_id=current_user.id, deleted=False)
+
+    # 总数
+    total = query.count()
+
+    # 有效合同（未过期）
+    active = query.filter(Contract.contract_end_date > today).count()
+
+    # 即将到期（60天内）
+    expiring_date = today + timedelta(days=reminder_days)
+    expiring_soon = query.filter(
+        Contract.contract_end_date > today,
+        Contract.contract_end_date <= expiring_date
+    ).count()
+
+    # 已过期
+    expired = query.filter(Contract.contract_end_date <= today).count()
+
+    return jsonify({
+        'total': total,
+        'active': active,
+        'expiring_soon': expiring_soon,
+        'expired': expired
+    }), 200

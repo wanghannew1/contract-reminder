@@ -1,24 +1,22 @@
-{% raw %}{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}主面板 - 合同提醒管理系统{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-4" x-data="dashboardData()">
     <div class="col-md-12">
         <h2><i class="bi bi-speedometer2"></i> 主面板</h2>
-        <p class="text-muted">欢迎回来，{{ current_user.username }}！以下是您的合同概况。</p>
+        <p class="text-muted">欢迎回来，{{ current_user.name }}！以下是您的合同概况。</p>
     </div>
-</div>
 
-<!-- 统计卡片 -->
-<div class="row mb-4" x-data="dashboardStats()">
+    <!-- 统计卡片 -->
     <div class="col-md-3">
         <div class="card border-primary">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">合同总数</h6>
-                        <h3 class="mb-0">{{ stats.total }}</h3>
+                        <h3 class="mb-0" x-text="stats.total || 0"></h3>
                     </div>
                     <div class="text-primary">
                         <i class="bi bi-files" style="font-size: 2.5rem;"></i>
@@ -26,7 +24,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-primary">
-                <a href="{{ url_for('contracts.list') }}" class="text-primary">查看全部</a>
+                <a href="/contracts" class="text-primary">查看全部</a>
             </div>
         </div>
     </div>
@@ -37,7 +35,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">有效合同</h6>
-                        <h3 class="mb-0 text-success">{{ stats.active }}</h3>
+                        <h3 class="mb-0 text-success" x-text="stats.active || 0"></h3>
                     </div>
                     <div class="text-success">
                         <i class="bi bi-check-circle" style="font-size: 2.5rem;"></i>
@@ -45,7 +43,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-success">
-                <a href="{{ url_for('contracts.list') }}?status=active" class="text-success">查看全部</a>
+                <a href="/contracts" class="text-success">查看全部</a>
             </div>
         </div>
     </div>
@@ -56,7 +54,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">即将到期</h6>
-                        <h3 class="mb-0 text-warning">{{ stats.expiring_soon }}</h3>
+                        <h3 class="mb-0 text-warning" x-text="stats.expiring_soon || 0"></h3>
                     </div>
                     <div class="text-warning">
                         <i class="bi bi-exclamation-circle" style="font-size: 2.5rem;"></i>
@@ -64,7 +62,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-warning">
-                <a href="{{ url_for('contracts.list') }}?filter=expiring_soon" class="text-warning">查看全部</a>
+                <a href="/contracts?expire_within=60" class="text-warning">查看全部</a>
             </div>
         </div>
     </div>
@@ -75,7 +73,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted mb-2">已过期</h6>
-                        <h3 class="mb-0 text-danger">{{ stats.expired }}</h3>
+                        <h3 class="mb-0 text-danger" x-text="stats.expired || 0"></h3>
                     </div>
                     <div class="text-danger">
                         <i class="bi bi-x-circle" style="font-size: 2.5rem;"></i>
@@ -83,109 +81,80 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-danger">
-                <a href="{{ url_for('contracts.list') }}?status=expired" class="text-danger">查看全部</a>
+                <a href="/contracts" class="text-danger">查看全部</a>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row">
     <!-- 即将到期的合同 -->
-    <div class="col-md-6 mb-4">
+    <div class="col-md-6 mb-4 mt-4">
         <div class="card">
             <div class="card-header bg-warning text-white">
                 <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> 即将到期的合同</h5>
             </div>
             <div class="card-body">
-                {% if expiring_contracts %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>合同名称</th>
-                                <th>签约方</th>
-                                <th>到期日期</th>
-                                <th>剩余天数</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for contract in expiring_contracts %}
-                            <tr>
-                                <td>
-                                    <a href="{{ url_for('contracts.detail', id=contract.id) }}">{{ contract.name }}</a>
-                                </td>
-                                <td>{{ contract.party }}</td>
-                                <td>{{ contract.end_date.strftime('%Y-%m-%d') }}</td>
-                                <td>
-                                    <span class="badge bg-warning text-dark">{{ contract.days_until_expiry }}天</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted mb-0">暂无即将到期的合同</p>
-                {% endif %}
+                <template x-if="expiring_contracts.length === 0">
+                    <p class="text-muted mb-0">暂无即将到期的合同</p>
+                </template>
+                <template x-if="expiring_contracts.length > 0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>员工姓名</th>
+                                    <th>单位</th>
+                                    <th>到期日期</th>
+                                    <th>剩余天数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="contract in expiring_contracts" :key="contract.id">
+                                    <tr>
+                                        <td x-text="contract.employee_name"></td>
+                                        <td x-text="contract.unit_name || '-'"></td>
+                                        <td x-text="contract.contract_end_date"></td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark" x-text="contract.days_until_expiry + '天'"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
             </div>
             <div class="card-footer bg-transparent">
-                <a href="{{ url_for('contracts.list') }}?filter=expiring_soon" class="text-warning">查看全部即将到期合同</a>
+                <a href="/contracts?expire_within=60" class="text-warning">查看全部即将到期合同</a>
             </div>
         </div>
     </div>
 
     <!-- 近期日程 -->
-    <div class="col-md-6 mb-4">
+    <div class="col-md-6 mb-4 mt-4">
         <div class="card">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0"><i class="bi bi-calendar-event"></i> 近期日程</h5>
             </div>
             <div class="card-body">
-                {% if upcoming_events %}
-                <div class="list-group list-group-flush">
-                    {% for event in upcoming_events %}
-                    <a href="{{ url_for('calendar.detail', id=event.id) }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between align-items-center">
-                            <h6 class="mb-1">{{ event.title }}</h6>
-                            <small class="text-muted">{{ event.due_date.strftime('%Y-%m-%d') }}</small>
-                        </div>
-                        <p class="mb-1 text-muted">{{ event.description[:50] }}{% if event.description|length > 50 %}...{% endif %}</p>
-                        <small class="text-info">{{ event.get_contract_name() if event.contract_id else '无关联合同' }}</small>
-                    </a>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted mb-0">暂无近期日程</p>
-                {% endif %}
+                <template x-if="upcoming_events.length === 0">
+                    <p class="text-muted mb-0">暂无近期日程</p>
+                </template>
+                <template x-if="upcoming_events.length > 0">
+                    <div class="list-group list-group-flush">
+                        <template x-for="event in upcoming_events" :key="event.id">
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h6 class="mb-1" x-text="event.summary"></h6>
+                                    <small class="text-muted" x-text="event.start_time"></small>
+                                </div>
+                                <small class="text-info" x-text="event.employee_name || '无关联合同'"></small>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
             <div class="card-footer bg-transparent">
-                <a href="{{ url_for('calendar.list') }}" class="text-info">查看全部日程</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- 合同类型分布 -->
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> 合同类型分布</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="contractTypeChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- 月度趋势 -->
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up"></i> 月度新增合同</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="monthlyTrendChart" height="200"></canvas>
+                <a href="/calendar" class="text-info">查看全部日程</a>
             </div>
         </div>
     </div>
@@ -193,73 +162,59 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    document.addEventListener('alpine:init', function() {
-        Alpine.data('dashboardStats', function() {
-            return {
-                init() {
-                    // 图表初始化将在页面加载后执行
-                }
-            }
-        });
-    });
-
-    // 合同类型分布图
-    const typeCtx = document.getElementById('contractTypeChart').getContext('2d');
-    new Chart(typeCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ type_distribution.labels|tojson }},
-            datasets: [{
-                data: {{ type_distribution.values|tojson }},
-                backgroundColor: [
-                    '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#17a2b8'
-                ]
-            }]
+function dashboardData() {
+    return {
+        stats: {
+            total: 0,
+            active: 0,
+            expiring_soon: 0,
+            expired: 0
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+        expiring_contracts: [],
+        upcoming_events: [],
+
+        async init() {
+            await this.loadStats();
+            await this.loadExpiringContracts();
+            await this.loadUpcomingEvents();
+        },
+
+        async loadStats() {
+            try {
+                const response = await fetch('/api/contracts/stats');
+                if (response.ok) {
+                    this.stats = await response.json();
                 }
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            }
+        },
+
+        async loadExpiringContracts() {
+            try {
+                const response = await fetch('/api/contracts?expire_within=30&limit=5');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.expiring_contracts = data.items || [];
+                }
+            } catch (error) {
+                console.error('加载即将到期合同失败:', error);
+            }
+        },
+
+        async loadUpcomingEvents() {
+            try {
+                const response = await fetch('/api/calendar/events?limit=5');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.upcoming_events = data.items || [];
+                }
+            } catch (error) {
+                console.error('加载近期日程失败:', error);
             }
         }
-    });
-
-    // 月度趋势图
-    const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
-    new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: {{ monthly_trend.labels|tojson }},
-            datasets: [{
-                label: '新增合同数',
-                data: {{ monthly_trend.values|tojson }},
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
+    };
+}
 </script>
 {% endblock %}
-{% endraw %}
