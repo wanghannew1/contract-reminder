@@ -94,7 +94,7 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
         function logout() {
-            fetch('/api/auth/logout', { method: 'POST' })
+            fetch('/auth/logout', { method: 'POST' })
                 .then(() => window.location.href = '/auth/login');
         }
     </script>
