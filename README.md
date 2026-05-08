@@ -72,13 +72,13 @@ SESSION_LIFETIME_DAYS=7
 ### 5. 初始化数据库
 
 ```bash
-python3 -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
+python -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
 ### 6. 创建超级管理员账号
 
 ```bash
-python3 -c "
+python -c "
 from app import create_app, db
 from app.models.user import User
 
@@ -103,7 +103,7 @@ print('超级管理员创建成功！')
 
 **开发环境：**
 ```bash
-python3 run.py
+python run.py
 ```
 
 **生产环境（使用 gunicorn）：**
@@ -192,14 +192,14 @@ contract-reminder/
 
 ```bash
 # 运行所有测试
-python3 -m pytest tests/ -v
+python -m pytest tests/ -v
 
 # 运行特定测试
-python3 -m pytest tests/test_auth.py -v
+python -m pytest tests/test_auth.py -v
 
 # 查看测试覆盖率
 pip install pytest-cov
-python3 -m pytest tests/ --cov=app --cov-report=html
+python -m pytest tests/ --cov=app --cov-report=html
 ```
 
 ## 常见问题

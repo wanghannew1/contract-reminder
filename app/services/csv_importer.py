@@ -58,6 +58,7 @@ class CSVImporter:
         self.skipped_duplicate = 0
         self.failed_count = 0
         self.failed_detail: List[Dict[str, Any]] = []
+        self.import_log_id: Optional[int] = None
 
     def detect_encoding(self, file_content: bytes) -> str:
         """自动检测文件编码（GBK/UTF-8/UTF-8-BOM）"""
@@ -87,7 +88,7 @@ class CSVImporter:
             # 尝试备用编码
             text = file_content.decode('gbk', errors='replace')
 
-        reader = csv.reader(io.StringIO(text))
+        reader = csv.reader(io.StringIO(text, newline=''))
         rows = list(reader)
 
         if not rows:
@@ -230,23 +231,25 @@ class CSVImporter:
             skipped_terminated=self.skipped_terminated,
             skipped_duplicate=self.skipped_duplicate,
             failed_count=self.failed_count,
-            failed_detail=json.dumps(self.failed_detail) if self.failed_detail else None
+            failed_detail=json.dumps(self.failed_detail, ensure_ascii=False) if self.failed_detail else None
         )
         db.session.add(import_log)
         db.session.commit()
+        self.import_log_id = import_log.id
 
         return self.get_summary()
 
     def get_summary(self) -> Dict[str, Any]:
         """获取导入结果摘要"""
         return {
+            "total": self.imported_count + self.skipped_expired + self.skipped_terminated + self.skipped_duplicate + self.failed_count,
             "imported": self.imported_count,
             "skipped_expired": self.skipped_expired,
             "skipped_terminated": self.skipped_terminated,
             "skipped_duplicate": self.skipped_duplicate,
             "failed": self.failed_count,
             "failed_detail": self.failed_detail,
-            "import_log_id": None  # 导入后填充
+            "import_log_id": self.import_log_id
         }
 
     def import_file(self, file) -> Dict[str, Any]:

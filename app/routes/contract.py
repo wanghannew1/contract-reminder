@@ -48,21 +48,6 @@ def upload_csv():
         importer = CSVImporter(current_user.id)
         result = importer.import_file(file)
 
-        # 记录导入日志
-        import_log = ImportLog(
-            user_id=current_user.id,
-            filename=file.filename,
-            total_rows=result['total'],
-            imported_count=result['imported'],
-            skipped_expired=result['skipped_expired'],
-            skipped_terminated=result['skipped_terminated'],
-            skipped_duplicate=result['skipped_duplicate'],
-            failed_count=result['failed'],
-            failed_detail=result.get('failed_detail', '')
-        )
-        db.session.add(import_log)
-        db.session.commit()
-
         return jsonify({
             'success': True,
             'summary': {
@@ -73,7 +58,7 @@ def upload_csv():
                 'failed': result['failed']
             },
             'failed_detail': result.get('failed_detail', []),
-            'import_log_id': import_log.id
+            'import_log_id': result.get('import_log_id')
         }), 200
 
     except Exception as e:
