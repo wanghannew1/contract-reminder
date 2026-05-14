@@ -76,8 +76,11 @@ def get_contracts():
     expire_within = request.args.get('expire_within', type=int)
     has_reminder = request.args.get('has_reminder', type=bool)
 
-    # 构建查询
-    query = Contract.query.filter_by(user_id=current_user.id, deleted=False)
+    # 构建查询：超管看全部合同，普通用户看 admin_org 与自己姓名匹配的合同
+    if current_user.is_superadmin:
+        query = Contract.query.filter_by(deleted=False)
+    else:
+        query = Contract.query.filter_by(admin_org=current_user.name, deleted=False)
 
     # 关键词搜索
     if search:
@@ -135,12 +138,16 @@ def delete_contract(contract_id):
     """删除合同（软删除）"""
     contract = Contract.query.filter_by(
         id=contract_id,
-        user_id=current_user.id,
         deleted=False
     ).first()
 
     if not contract:
         return jsonify({'success': False, 'message': '合同不存在'}), 404
+
+    # 检查权限：超管可删任意合同，普通用户只能删 admin_org 匹配的合同
+    if not current_user.is_superadmin:
+        if contract.admin_org != current_user.name:
+            return jsonify({'success': False, 'message': '无权操作此合同'}), 403
 
     contract.deleted = True
     contract.updated_at = datetime.utcnow()
@@ -156,8 +163,11 @@ def get_contract_stats():
     today = date.today()
     reminder_days = 60  # 默认60天内到期为即将到期
 
-    # 查询未删除的合同
-    query = Contract.query.filter_by(user_id=current_user.id, deleted=False)
+    # 查询未删除的合同（超管看全部，普通用户看 admin_org 匹配的）
+    if current_user.is_superadmin:
+        query = Contract.query.filter_by(deleted=False)
+    else:
+        query = Contract.query.filter_by(admin_org=current_user.name, deleted=False)
 
     # 总数
     total = query.count()
