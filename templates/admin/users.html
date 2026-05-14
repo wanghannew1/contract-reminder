@@ -3,202 +3,206 @@
 {% block title %}用户管理 - 合同提醒管理系统{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-people"></i> 用户管理</h2>
-    <button class="btn btn-primary" @click="showCreateModal()">
-        <i class="bi bi-person-plus"></i> 添加用户
-    </button>
-</div>
+<div x-data="userList()" x-init="init()">
 
-<!-- 搜索 -->
-<div class="card mb-4" x-data="userSearch()">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label for="search" class="form-label">搜索</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="search" x-model="search"
-                           placeholder="搜索姓名、手机号..." @keyup.enter="loadUsers()">
-                    <button class="btn btn-outline-primary" @click="loadUsers()">
-                        <i class="bi bi-search"></i>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people"></i> 用户管理</h2>
+        <button class="btn btn-primary" @click="showCreateModal()">
+            <i class="bi bi-person-plus"></i> 添加用户
+        </button>
+    </div>
+
+    <!-- 搜索 -->
+    <div class="card mb-4" x-data="userSearch()">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">搜索</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search" x-model="search"
+                               placeholder="搜索姓名、手机号..." @keyup.enter="loadUsers()">
+                        <button class="btn btn-outline-primary" @click="loadUsers()">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-outline-secondary w-100" @click="resetSearch()">
+                        <i class="bi bi-arrow-counterclockwise"></i> 重置
                     </button>
                 </div>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary w-100" @click="resetSearch()">
-                    <i class="bi bi-arrow-counterclockwise"></i> 重置
-                </button>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- 用户列表 -->
-<div class="card" x-data="userList()">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">用户列表</h5>
-        <span class="text-muted">共 <span x-text="total"></span> 个用户</span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>姓名</th>
-                        <th>手机号</th>
-                        <th>钉钉UnionId</th>
-                        <th>角色</th>
-                        <th>状态</th>
-                        <th>最后登录</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="user in users" :key="user.id">
+    <!-- 用户列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">用户列表</h5>
+            <span class="text-muted">共 <span x-text="total"></span> 个用户</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
-                                         style="width: 32px; height: 32px; color: white; font-size: 14px;"
-                                         x-text="user.name ? user.name[0] : '?'">
+                            <th>姓名</th>
+                            <th>手机号</th>
+                            <th>钉钉UnionId</th>
+                            <th>角色</th>
+                            <th>状态</th>
+                            <th>最后登录</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="user in users" :key="user.id">
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                             style="width: 32px; height: 32px; color: white; font-size: 14px;"
+                                             x-text="user.name ? user.name[0] : '?'">
+                                        </div>
+                                        <strong x-text="user.name"></strong>
                                     </div>
-                                    <strong x-text="user.name"></strong>
-                                </div>
-                            </td>
-                            <td x-text="user.phone"></td>
-                            <td x-text="user.unionid || '-'"></td>
-                            <td>
-                                <span class="badge" :class="user.is_superadmin ? 'bg-danger' : 'bg-secondary'"
-                                      x-text="user.is_superadmin ? '超级管理员' : '普通用户'"></span>
-                            </td>
-                            <td>
-                                <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-secondary'"
-                                      x-text="user.is_active ? '启用' : '停用'"></span>
-                            </td>
-                            <td x-text="user.last_login_at || '从未登录'"></td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button class="btn btn-outline-primary btn-sm" title="编辑"
-                                            @click="editUser(user)">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-outline-warning btn-sm" title="重置密码"
-                                            @click="resetPassword(user.id, user.name)">
-                                        <i class="bi bi-key"></i>
-                                    </button>
-                                    <button class="btn btn-sm" title="启用/停用"
-                                            :class="user.is_active ? 'btn-outline-danger' : 'btn-outline-success'"
-                                            @click="toggleStatus(user.id, user.is_active)">
-                                        <i class="bi" :class="user.is_active ? 'bi-slash-circle' : 'bi-check-circle'"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                                <td x-text="user.phone"></td>
+                                <td x-text="user.unionid || '-'"></td>
+                                <td>
+                                    <span class="badge" :class="user.is_superadmin ? 'bg-danger' : 'bg-secondary'"
+                                          x-text="user.is_superadmin ? '超级管理员' : '普通用户'"></span>
+                                </td>
+                                <td>
+                                    <span class="badge" :class="user.is_active ? 'bg-success' : 'bg-secondary'"
+                                          x-text="user.is_active ? '启用' : '停用'"></span>
+                                </td>
+                                <td x-text="user.last_login_at || '从未登录'"></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-primary btn-sm" title="编辑"
+                                                @click="editUser(user)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning btn-sm" title="重置密码"
+                                                @click="resetPassword(user.id, user.name)">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        <button class="btn btn-sm" title="启用/停用"
+                                                :class="user.is_active ? 'btn-outline-danger' : 'btn-outline-success'"
+                                                @click="toggleStatus(user.id, user.is_active)">
+                                            <i class="bi" :class="user.is_active ? 'bi-slash-circle' : 'bi-check-circle'"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="users.length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 mb-0">暂无用户记录</p>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="card-footer" x-show="totalPages > 1">
+            <nav aria-label="用户分页">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item" :class="{ disabled: page <= 1 }">
+                        <a class="page-link" href="#" @click.prevent="changePage(page - 1)">上一页</a>
+                    </li>
+                    <template x-for="p in displayPages" :key="p">
+                        <li class="page-item" :class="{ active: p === page }">
+                            <a class="page-link" href="#" @click.prevent="changePage(p)" x-text="p"></a>
+                        </li>
                     </template>
-                    <template x-if="users.length === 0">
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                <i class="bi bi-people" style="font-size: 2rem;"></i>
-                                <p class="mt-2 mb-0">暂无用户记录</p>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+                    <li class="page-item" :class="{ disabled: page >= totalPages }">
+                        <a class="page-link" href="#" @click.prevent="changePage(page + 1)">下一页</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 
-    <!-- 分页 -->
-    <div class="card-footer" x-show="totalPages > 1">
-        <nav aria-label="用户分页">
-            <ul class="pagination justify-content-center mb-0">
-                <li class="page-item" :class="{ disabled: page <= 1 }">
-                    <a class="page-link" href="#" @click.prevent="changePage(page - 1)">上一页</a>
-                </li>
-                <template x-for="p in displayPages" :key="p">
-                    <li class="page-item" :class="{ active: p === page }">
-                        <a class="page-link" href="#" @click.prevent="changePage(p)" x-text="p"></a>
-                    </li>
-                </template>
-                <li class="page-item" :class="{ disabled: page >= totalPages }">
-                    <a class="page-link" href="#" @click.prevent="changePage(page + 1)">下一页</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</div>
-
-<!-- 创建/编辑用户模态框 -->
-<div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header" :class="editingUser ? 'bg-primary text-white' : 'bg-success text-white'">
-                <h5 class="modal-title">
-                    <i class="bi" :class="editingUser ? 'bi-pencil' : 'bi-person-plus'"></i>
-                    <span x-text="editingUser ? '编辑用户' : '添加用户'"></span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm">
-                    <div class="mb-3">
-                        <label for="user_name" class="form-label">姓名 *</label>
-                        <input type="text" class="form-control" id="user_name" x-model="formData.name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="user_phone" class="form-label">手机号 *</label>
-                        <input type="text" class="form-control" id="user_phone" x-model="formData.phone"
-                               :disabled="editingUser" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="user_password" class="form-label" x-text="editingUser ? '新密码（留空不修改）' : '密码 *'"></label>
-                        <input type="password" class="form-control" id="user_password" x-model="formData.password"
-                               :required="!editingUser">
-                    </div>
-                    <div class="mb-3">
-                        <label for="user_unionid" class="form-label">钉钉UnionId</label>
-                        <input type="text" class="form-control" id="user_unionid" x-model="formData.unionid"
-                               placeholder="用于创建钉钉日程提醒">
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="user_is_superadmin" x-model="formData.is_superadmin">
-                        <label class="form-check-label" for="user_is_superadmin">超级管理员</label>
-                    </div>
-                </form>
-            </div>
+    <!-- 创建/编辑用户模态框 -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" :class="editingUser ? 'bg-primary text-white' : 'bg-success text-white'">
+                    <h5 class="modal-title">
+                        <i class="bi" :class="editingUser ? 'bi-pencil' : 'bi-person-plus'"></i>
+                        <span x-text="editingUser ? '编辑用户' : '添加用户'"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="user_name" class="form-label">姓名 *</label>
+                            <input type="text" class="form-control" id="user_name" x-model="formData.name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="user_phone" class="form-label">手机号 *</label>
+                            <input type="text" class="form-control" id="user_phone" x-model="formData.phone"
+                                   :disabled="editingUser" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="user_password" class="form-label" x-text="editingUser ? '新密码（留空不修改）' : '密码 *'"></label>
+                            <input type="password" class="form-control" id="user_password" x-model="formData.password"
+                                   :required="!editingUser">
+                        </div>
+                        <div class="mb-3">
+                            <label for="user_unionid" class="form-label">钉钉UnionId</label>
+                            <input type="text" class="form-control" id="user_unionid" x-model="formData.unionid"
+                                   placeholder="用于创建钉钉日程提醒">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="user_is_superadmin" x-model="formData.is_superadmin">
+                            <label class="form-check-label" for="user_is_superadmin">超级管理员</label>
+                        </div>
+                    </form>
+                </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button type="button" class="btn" :class="editingUser ? 'btn-primary' : 'btn-success'" @click="saveUser()">
                     <i class="bi bi-check"></i> 保存
                 </button>
             </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- 重置密码模态框 -->
-<div class="modal fade" id="resetPasswordModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title"><i class="bi bi-key"></i> 重置密码</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>确定要重置用户 <strong id="resetPasswordUserName"></strong> 的密码吗？</p>
-                <div class="mb-3">
-                    <label for="new_password" class="form-label">新密码</label>
-                    <input type="password" class="form-control" id="new_password" x-model="newPassword" required>
+    <!-- 重置密码模态框 -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> 重置密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要重置用户 <strong id="resetPasswordUserName"></strong> 的密码吗？</p>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="new_password" x-model="newPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-warning" @click="confirmResetPassword()">
+                        <i class="bi bi-check"></i> 确认重置
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-warning" @click="confirmResetPassword()">
-                    <i class="bi bi-check"></i> 确认重置
-                </button>
-            </div>
         </div>
     </div>
+
 </div>
 {% endblock %}
 
